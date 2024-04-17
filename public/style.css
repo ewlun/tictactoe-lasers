@@ -1,0 +1,17 @@
+body {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: hidden;
+    overflow-x: hidden;
+}
+
+#cont {
+    position: relative;
+}
+
+canvas {
+    position: absolute;
+    display: block;
+}
