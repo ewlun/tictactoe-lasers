@@ -29,7 +29,7 @@ const websocket = new WebSocket(`ws://${window.location.host}`);
 //     websocket.send(jsonmsg("join", ""));
 // };
 
-let opponent: Info;
+let opponent: Info | undefined = undefined;
 
 websocket.onmessage = (event) => {
     const msg = JSON.parse(event.data) as Msg;
@@ -42,6 +42,7 @@ websocket.onmessage = (event) => {
             break;
         case "disconnected":
             console.log("Goodbye");
+            opponent = undefined;
             break;
         default:
             console.log(msg.body);
