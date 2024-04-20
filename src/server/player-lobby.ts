@@ -30,6 +30,6 @@ export class Lobby {
 }
 
 export type Move = {
-    id: number,
+    id: number
     move: (number | string)[]
 }
