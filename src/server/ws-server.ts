@@ -3,6 +3,7 @@ import WebSocket from 'ws';
 import { WebSocketServer } from "ws";
 import { app } from './http-server.js';
 import { MsgType, sendMsg } from '../client/utils/jsonmsg.js';
+import { Lobby, Player, Move } from './player-lobby.js'
 
 const port = 3000;
 const ip = '127.0.0.1';
@@ -11,51 +12,50 @@ const server = http.createServer();
 
 const wss = new WebSocketServer({ server: server });
 
-export type PlayerInfo = {
-    id: number,
-    username?: string,
-    player?: number
-}
-
 let sockets: WebSocket[] = [];
-let socketInfo: Map<WebSocket, PlayerInfo> = new Map();
 
-let lobbies: WebSocket[][] = [];
-let waiting: WebSocket[] = [];
+let playerMap: Map<Number, Player> = new Map();
+let lobbies: Lobby[] = [];
+let waiting: Player[] = [];
 
-wss.on('connection', socket => {
+wss.on('connection', (socket, request) => {
     sockets.push(socket);
-    socketInfo.set(socket, { id: Date.now() })
+    let self = new Player(socket, "john");
 
-    let opponent: WebSocket | undefined = undefined;
+    playerMap.set(self.id, self)
 
     if (waiting.length === 0) {
-        waiting.push(socket);
-        sendMsg(socket, "info", "Waiting...");
+        waiting.push(self);
+        sendMsg(self.socket, "info", "Waiting...");
     }
     else {
-        opponent = waiting[0];
-        lobbies.push([socket, opponent]);
-        waiting.splice(waiting.indexOf(opponent), 1)
-        sendMsg(socket, "connection", JSON.stringify(socketInfo.get(opponent)!));
-        sendMsg(opponent, "connection", JSON.stringify(socketInfo.get(socket)!));
+        // opponent = waiting[0];
+        let opponent = waiting[0]
+        let lobby = new Lobby(opponent.id, self.id);
+
+        self.lobby = lobby;
+        self.opponentID = opponent.id;
+        opponent.lobby = lobby;
+        opponent.opponentID = self.id;
+
+        lobbies.push(lobby);
+        waiting.pop();
+        sendMsg(self.socket, "connection", { selfID: self.id, opponentID: self.opponentID });
+        sendMsg(opponent.socket, "connection", { selfID: opponent.id, opponentID: opponent.opponentID });
     }
 
     socket.on("message", event => {
         const msg = JSON.parse(event.toString());
         switch (msg.type as MsgType) {
-            case "opponent":
-                let opponentInfo = msg.body as PlayerInfo;
-                opponent = [...socketInfo].find(([key, val]) => val.id == opponentInfo.id)?.[0];
-                break;
-
             case "makeMove":
-                if (lobbies.find(s => s.indexOf(socket) !== -1) === undefined) {
-                    sendMsg(socket, "error", "No opponent");
+                if (self.opponentID === undefined) {
+                    sendMsg(self.socket, "error", "No opponent");
                     break;
                 }
-                sendMsg(socket, "newMove", msg.body);
-                sendMsg(opponent!, "newMove", msg.body);
+                let move = msg.body as Move;
+                let opponent = playerMap.get(self.opponentID!);
+                sendMsg(self.socket, "newMove", move.move);
+                sendMsg(opponent!.socket, "newMove", move.move);
                 break;
 
             default:
@@ -65,16 +65,16 @@ wss.on('connection', socket => {
     });
 
     socket.on('close', () => {
-        sockets.splice(sockets.indexOf(socket), 1);
-        if (waiting.indexOf(socket) !== -1)
-            waiting.splice(waiting.indexOf(socket), 1);
+        sockets.splice(sockets.indexOf(self.socket), 1);
+        if (waiting.indexOf(self) !== -1)
+            waiting.pop(); // Borde inte finnas mer än 1 som väntar men idk
 
-        let socketLobby = lobbies.find(s => s.indexOf(socket) !== -1);
-        if (socketLobby !== undefined) { // Om socket finns i en lobby
-            socketLobby.splice(socketLobby.indexOf(socket), 1);
-            sendMsg(opponent!, "disconnected", "");
-            waiting.push(opponent!);
-            lobbies.splice(lobbies.indexOf(socketLobby), 1);
+        if (self.lobby !== undefined) { // Om socket finns i en lobby
+            self.lobby.playerIds.splice(self.lobby.playerIds.indexOf(self.id), 1);
+            let opponent = playerMap.get(self.opponentID!)!
+            sendMsg(opponent.socket, "disconnected", "");
+            waiting.push(opponent);
+            lobbies.splice(lobbies.indexOf(self.lobby), 1);
         }
     });
 })

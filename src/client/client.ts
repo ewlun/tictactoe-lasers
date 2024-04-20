@@ -1,6 +1,5 @@
 import { sendMsg, Msg, MsgType } from './utils/jsonmsg.js';
 import { Grid } from './grid/grid.js';
-import { PlayerInfo } from 'server/ws-server.js';
 
 const grid = new Grid(15, 15);
 
@@ -22,13 +21,19 @@ grid.addMouseEvent("mousedown", (e, x, y) => {
     // let offset = grid.squareSize + grid.spacing;
 
     // grid.ctx.fillText("X", x * offset + 4 * grid.spacing, (y + 1) * offset - 2 * grid.spacing);
-    sendMsg(websocket, "makeMove", [x, y, "X"]);
+    sendMsg(websocket, "makeMove", { move: [x, y, "X"] });
 })
 
 
 const websocket = new WebSocket(`ws://${window.location.host}`);
 
-let opponent: PlayerInfo | undefined = undefined;
+let opponent: number | undefined = 0;
+let self: number = 0;
+
+export type Connection = {
+    selfID: number,
+    opponentID: number
+}
 
 websocket.onmessage = (event) => {
     const msg = JSON.parse(event.data) as Msg;
@@ -36,9 +41,9 @@ websocket.onmessage = (event) => {
         case "error":
             throw new Error(msg.body);
         case "connection":
-            opponent = JSON.parse(msg.body) as PlayerInfo;
-            sendMsg(websocket, "opponent", opponent);
-            console.log("Hello", opponent.id);
+            let response = msg.body as Connection;
+            opponent = response.opponentID;
+            console.log("Hello", opponent);
             break;
         case "disconnected":
             console.log("Goodbye");
