@@ -1,14 +1,8 @@
-import http from 'http'
 import WebSocket from 'ws';
 import { WebSocketServer } from "ws";
-import { app } from './http-server.js';
+import { server } from './http-server.js';
 import { Connection, MsgType, sendMsg } from '../client/utils/jsonmsg.js';
 import { Lobby, Player, Move } from './player-lobby.js'
-
-const port = 3000;
-const ip = '127.0.0.1';
-
-const server = http.createServer();
 
 const wss = new WebSocketServer({ server: server });
 
@@ -89,7 +83,3 @@ wss.on('connection', (socket, request) => {
         }
     });
 })
-
-
-server.on('request', app);
-server.listen(port, ip, () => { console.log(`Serving on http://${ip}:${port}`) });

@@ -18,8 +18,9 @@ grid.addMouseEvent("mousedown", (e, x, y) => {
     sendMsg(websocket, "makeMove", { id: self, move: [x, y, char] });
 })
 
-
-const websocket = new WebSocket(`ws://${window.location.host}`);
+const hostname = window.location.hostname;
+const port = parseInt(window.location.port);
+const websocket = new WebSocket(`ws://${hostname}:${port + 1}`);
 
 let opponent: number | undefined = 0;
 let self: number = 0;
