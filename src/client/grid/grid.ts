@@ -5,8 +5,8 @@ export class Grid {
     boardWidth: number;
     spacing: number;
     squareSize: number;
-    colorKey: Record<number | string, string> | undefined;
-    board: (number | string)[][];
+    colorKey: Record<string, string> | undefined;
+    board: (string)[][];
 
     constructor(boardWidth: number, boardHeight: number, spacing = 3, squareSize = 40,) {
         this.canvas = document.body.appendChild(document.createElement("canvas"));
@@ -25,12 +25,14 @@ export class Grid {
         this.board = new Array(boardWidth);
 
         for (let i = 0; i < boardWidth; i++) {
-            this.board[i] = new Array(boardHeight).fill(0);
+            this.board[i] = new Array(boardHeight).fill("empty");
         }
 
         this.canvas.addEventListener("contextmenu", e => { e.preventDefault() });
 
         this.colorKey = undefined;
+
+        this.ctx.font = this.squareSize.toString() + "px Monospace";
     }
 
     drawBoard(): void {
@@ -40,18 +42,31 @@ export class Grid {
         this.ctx.fillStyle = this.colorKey["border"];
 
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        let offset = this.squareSize + this.spacing;
         for (let i = 0; i < this.boardHeight; i++) {
             for (let j = 0; j < this.boardWidth; j++) {
 
-                if (this.colorKey[this.board[j][i]] === undefined)
-                    this.ctx.fillStyle = '#FFFFFF';
-                else {
+                if (this.board[j][i] in this.colorKey) {
                     this.ctx.fillStyle = this.colorKey[this.board[j][i]];
+
+                    this.ctx.fillRect(j * (this.spacing + this.squareSize) + this.spacing,
+                        i * (this.spacing + this.squareSize) + this.spacing,
+                        this.squareSize, this.squareSize);
+                }
+                else {
+                    this.ctx.fillStyle = '#FFFFFF';
+                    this.ctx.fillRect(j * (this.spacing + this.squareSize) + this.spacing,
+                        i * (this.spacing + this.squareSize) + this.spacing,
+                        this.squareSize, this.squareSize);
+
+                    this.ctx.fillStyle = '#000000';
+                    this.ctx.fillText(this.board[j][i],
+                        j * offset + 4 * this.spacing, (i + 1) * offset - 2 * this.spacing);
                 }
 
-                this.ctx.fillRect(j * (this.spacing + this.squareSize) + this.spacing,
-                    i * (this.spacing + this.squareSize) + this.spacing,
-                    this.squareSize, this.squareSize);
+
+
             }
         }
     }

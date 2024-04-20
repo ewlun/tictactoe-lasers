@@ -6,7 +6,8 @@ const grid = new Grid(15, 15);
 
 grid.colorKey = {
     "burned": "#555555",
-    "border": "#000000"
+    "border": "#000000",
+    "empty": "#FFFFFF"
 }
 
 // grid.drawLine(4, 3, 12, 9);
@@ -21,15 +22,11 @@ grid.addMouseEvent("mousedown", (e, x, y) => {
     // let offset = grid.squareSize + grid.spacing;
 
     // grid.ctx.fillText("X", x * offset + 4 * grid.spacing, (y + 1) * offset - 2 * grid.spacing);
-    sendMsg(websocket, "makeMove", [x, y, "burned"]);
+    sendMsg(websocket, "makeMove", [x, y, "X"]);
 })
 
 
 const websocket = new WebSocket(`ws://${window.location.host}`);
-
-// websocket.onopen = (event) => {
-//     websocket.send(jsonmsg("join", ""));
-// };
 
 let opponent: PlayerInfo | undefined = undefined;
 
@@ -52,7 +49,7 @@ websocket.onmessage = (event) => {
             for (let i = 0; i < move.length / 3; i++) {
                 let x = move[i * 3 + 0] as number;
                 let y = move[i * 3 + 1] as number;
-                grid.board[x][y] = move[i * 3 + 2];
+                grid.board[x][y] = move[i * 3 + 2] as string;
             }
             grid.drawBoard();
             break;
