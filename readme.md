@@ -16,4 +16,4 @@ If a player gets three in a row, the other player has one turn to either:
 1. Get their own three in a row
 2. Destroy one of the marks that created the three in a row
 
-If the responding player chooses to get three in a row, all squares that were used become unusable. If the responding player fails to do either, they lose
+If the responding player chooses to get three in a row, all squares that were used become unusable for making three in a row, but can be used when shooting lasers. If the responding player fails to do either, they lose
